@@ -1,0 +1,19 @@
+{
+  "name": "13.socket",
+  "version": "1.0.0",
+  "main": "server-compiled.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "express": "^4.15.0",
+    "mongoose": "^4.8.5",
+    "socket.io": "^1.7.3"
+  }
+}

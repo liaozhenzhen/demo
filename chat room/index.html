@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>珠峰聊天室</title>
+    <style>
+        .user{
+            color:blue;
+            cursor:pointer;
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href=".\node_modules\bootstrap\dist\css\bootstrap.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="text-center">
+                        <button class="btn btn-danger" onclick="join('red')">红房间</button>
+                        <button class="btn btn-success " onclick="join('green')">绿房间</button>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <ul class="list-group" id="messages" onclick="selectUser(event)"></ul>
+                </div>
+                <div class="panel-footer">
+                    <form class="form-horizontal" onsubmit="send(event)">
+                        <div class="form-group">
+                            <label for="content" class="control-label col-md-1">内容</label>
+                            <div class="col-md-11">
+                                <textarea name="content" id="content" cols="30" rows="10" class="form-control" onkeyup="handleKeydown(event)"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-offset-1 col-md-offset-11">
+                                <button type="submit" class="btn btn-primary">提交</button>
+
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    /*var socket=io("/");//“/”代表连接当前根路径*/
+    var socket = io("/");
+    //监听服务器链接成功事件
+    socket.on("connect", function(){
+        socket.emit("getAllMessages")
+    });
+
+    function parse(msgObj){
+        return `<span class="user">${msgObj.username}</span>:${msgObj.content} <button class="btn btn-danger" onclick="del(event,'${msgObj._id}')">删除</button> <span class="pull-right">${msgObj.createAt && msgObj.createAt.toLocaleString()}</span>`
+    }
+
+    socket.on("message", function(msgObj){
+        /*  console.log(message);*/
+        var li = document.createElement("li");
+        li.className = "list-group-item";
+        li.innerHTML = parse(msgObj);
+        document.querySelector('#messages').appendChild(li);
+    });
+
+    //监听服务器返回的所有消息
+    socket.on("allMessages", function(msgObjs){
+        document.querySelector('#messages').innerHTML = msgObjs.map(function(msgObj){
+            return `<li class="list-group-item">${parse(msgObj)}</li>`;
+        }).join("");
+    });
+
+
+    function send(event){
+        event.preventDefault();
+        var contentArea = document.querySelector("#content");
+        var content = contentArea.value;
+        socket.send(content);
+        contentArea.value = "";
+    }
+    function selectUser(event){
+        if(event.target.className == "user"){
+            var contentArea = document.querySelector("#content");
+            contentArea.value = `@${event.target.innerHTML} `;
+        }
+    }
+    //删除某条信息
+    function del(event, _id){
+        socket.emit("del", _id);
+        event.target.parentNode.parentNode.removeChild(event.target.parentNode)
+    }
+
+    //加入某个房间
+    function join(roomName){
+        socket.emit("join", roomName);
+    }
+
+    var ctrlDown = false;
+    function handleKeydown(event){
+        var code = event.keyCode;//这是回车键
+        /*if(code=13){//回车发送消息
+         send(event);
+         }*/
+        //回车发送 并且ctrl+回车是换行
+        if(code == 17){
+            ctrlDown = true;
+            if(timer){
+                clearTimeout(timer);
+            }
+            var timer = setTimeout(function(){
+                ctrlDown = false;
+            }, 1000)
+        }
+        if(code == 13){
+            if(ctrlDown){
+                var contentArea = document.querySelector("#content");
+                contentArea.value = contentArea.value + "\n";   //\n就是换行的意思
+            } else {
+                send(event)
+            }
+        }
+    }
+
+
+</script>
+</body>
+</html>
